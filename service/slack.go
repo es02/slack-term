@@ -368,26 +368,8 @@ func (s *SlackService) SendCommand(channelID string, message string) (bool, erro
 
 		channelName := subMatch[2]
 
-		_, _, err := s.Client.JoinChannel(channelName)
+		_, err := s.Client.JoinChannel(channelName)
 
-		if err != nil {
-			return false, err
-		}
-
-		// Rebuild channel list as we've joined a channel
-		slackChans, err := s.Service.GetChannels()
-		if err != nil {
-			return false, err
-		}
-
-		// Channels: set channels in component
-		s.View.Channels.SetChannels(slackChans)
-
-		// Repopulate message buffer so we don't wipe content repopulating channel list
-		msgs, thr, err := ctx.Service.GetMessages(
-			s.View.Channels.ChannelItems[ctx.View.Channels.SelectedChannel].ID,
-			s.View.Chat.GetMaxItems(),
-		)
 		if err != nil {
 			return false, err
 		}
