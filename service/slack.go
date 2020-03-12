@@ -358,6 +358,41 @@ func (s *SlackService) SendCommand(channelID string, message string) (bool, erro
 
 	// Execute the the command when supported
 	switch r.FindString(message) {
+	case "/join":
+		r := regexp.MustCompile(`(?P<cmd>^/\w+) (?P<text>.*)`)
+		subMatch := r.FindStringSubmatch(message)
+
+		if len(subMatch) < 3 {
+			return false, errors.New("slash command malformed")
+		}
+
+		channelName := subMatch[2]
+
+		_, _, err := s.Client.JoinChannel(channelName)
+
+		if err != nil {
+			return false, err
+		}
+
+		// Rebuild channel list as we've joined a channel
+		slackChans, err := s.Service.GetChannels()
+		if err != nil {
+			return false, err
+		}
+
+		// Channels: set channels in component
+		s.View.Channels.SetChannels(slackChans)
+
+		// Repopulate message buffer so we don't wipe content repopulating channel list
+		msgs, thr, err := ctx.Service.GetMessages(
+			s.View.Channels.ChannelItems[ctx.View.Channels.SelectedChannel].ID,
+			s.View.Chat.GetMaxItems(),
+		)
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil	
 	case "/thread":
 		r := regexp.MustCompile(`(?P<cmd>^/\w+) (?P<id>\w+) (?P<msg>.*)`)
 		subMatch := r.FindStringSubmatch(message)
